@@ -35,9 +35,9 @@ class Publications(Directive):
         """ Option spec for sort option """
         return directives.choice(argument, ('key', 'date', 'name'))
 
-    required_arguments = 1
-    optional_arguments = 2
-    has_content = False
+    required_arguments = 0
+    optional_arguments = 3
+    has_content = True
     final_argument_whitespace = False
     option_spec = {
             'sort': sort,
@@ -45,8 +45,6 @@ class Publications(Directive):
             }
 
     def run(self):
-        bibtex_path = self.arguments[0].strip()
-
         sort_type = self.options.get('sort', 'date')
 
         # Load the publications template
@@ -61,8 +59,14 @@ class Publications(Directive):
 
         parser = BibTexParser()
         parser.customization = customize
-        with open(bibtex_path, 'r') as bibtex_file:
-            bib = bibtexparser.load(bibtex_file, parser=parser)
+
+        if self.arguments:
+            bibtex_path = self.arguments[0].strip()
+
+            with open(bibtex_path, 'r') as bibtex_file:
+                bib = bibtexparser.load(bibtex_file, parser=parser)
+        else:
+            bib = bibtexparser.loads('\n'.join(self.content), parser=parser)
 
         entries = sort_entries(bib.entries, sort_type)
 
