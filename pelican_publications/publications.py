@@ -29,19 +29,27 @@ class Publications(Directive):
         date: Sort by publication date descending (this is the default).
         key: Sort by bibtex key.
         name: Sort by author names.
+        none: Don't sort.
+        none-reversed: Don't sort, but reverse the items.
+
     """
 
     def sort(argument):
         """ Option spec for sort option """
-        return directives.choice(argument, ('key', 'date', 'name'))
+        return directives.choice(argument, ('key', 'date', 'name', 'none', 'none-reversed'))
+
+    def entries(argument):
+        """ Option spec for entries option """
+        return directives.unchanged(argument).split()
 
     required_arguments = 0
-    optional_arguments = 3
+    optional_arguments = 4
     has_content = True
     final_argument_whitespace = False
     option_spec = {
             'sort': sort,
             'template': directives.path,
+            'entries': entries,
             }
 
     def run(self):
@@ -68,7 +76,13 @@ class Publications(Directive):
         else:
             bib = bibtexparser.loads('\n'.join(self.content), parser=parser)
 
-        entries = sort_entries(bib.entries, sort_type)
+        entries_to_select = self.options.get('entries', [])
+        if entries_to_select:
+            d = bib.entries_dict
+            entries = [d[e] for e in entries_to_select]
+        else:
+            entries = bib.entries
+        entries = sort_entries(entries, sort_type)
 
         rendered_template = template.render(publications=entries)
         return [nodes.raw('', rendered_template, format='html')]
@@ -85,6 +99,10 @@ def sort_entries(entries, sort_type):
     elif sort_type == 'name':
         sort_key = lambda e: e.get('author', '')
         return sorted(entries, key=sort_key)
+    elif sort_type == 'none':
+        return entries
+    elif sort_type == 'none-reversed':
+        return reversed(entries)
     else:
         raise ValueError("Invalid sort option: {0}".format(sort_type))
 
