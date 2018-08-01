@@ -65,12 +65,11 @@ class Publications(Directive):
             # Use template from the Pelican theme
             template = pelican_generator.get_template('publications')
 
-        parser = BibTexParser()
+        parser = BibTexParser(common_strings=True)
         parser.customization = customize
 
         if self.arguments:
             bibtex_path = self.arguments[0].strip()
-
             with open(bibtex_path, 'r') as bibtex_file:
                 bib = bibtexparser.load(bibtex_file, parser=parser)
         else:
